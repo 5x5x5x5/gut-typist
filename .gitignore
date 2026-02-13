@@ -1,0 +1,13 @@
+# Editor
+*.swp
+*.swo
+*~
+.netrwhist
+tags
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Plugin data (local cache)
+# The actual book cache lives in ~/.local/share/nvim/gut-typist/
