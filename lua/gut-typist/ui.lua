@@ -63,7 +63,7 @@ function M.open(source_lines)
     cursorline = false,
     signcolumn = "no",
     foldcolumn = "0",
-    statusline = " SOURCE",
+    statusline = "\\ SOURCE",
   })
 
   -- Configure typing window
@@ -114,12 +114,14 @@ function M.update_stats_display(wpm, accuracy, progress)
   if not M.state.typing_win or not vim.api.nvim_win_is_valid(M.state.typing_win) then
     return
   end
-  local bar = string.format(
+  local text = string.format(
     " WPM: %.0f  |  Accuracy: %.1f%%  |  Progress: %.1f%%",
     wpm,
     accuracy,
     progress
   )
+  -- Escape for statusline syntax: spaces -> "\ ", percent -> "%%"
+  local bar = text:gsub("%%", "%%%%"):gsub(" ", "\\ ")
   vim.api.nvim_set_option_value("winbar", bar, { win = M.state.typing_win })
 end
 
