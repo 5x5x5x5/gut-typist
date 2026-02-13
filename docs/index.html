@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gut-typist — Touch typing practice in Neovim</title>
+<meta name="description" content="A Neovim plugin for touch typing practice using books from Project Gutenberg. Real-time feedback, WPM tracking, and session persistence.">
+<meta property="og:title" content="gut-typist">
+<meta property="og:description" content="Touch typing practice in Neovim, powered by Project Gutenberg.">
+<meta property="og:type" content="website">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --bg-surface: #151b23;
+  --surface: #282a36;
+  --surface-light: #343746;
+  --border: #44475a;
+  --fg: #f8f8f2;
+  --fg-muted: #6272a4;
+  --green: #50fa7b;
+  --red: #ff5555;
+  --purple: #bd93f9;
+  --cyan: #8be9fd;
+  --yellow: #f1fa8c;
+  --pink: #ff79c6;
+  --orange: #ffb86c;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, 'Liberation Mono', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --max-width: 980px;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a { color: var(--purple); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Hero ──────────────────────────────────────────── */
+
+.hero {
+  padding: 80px 0 40px;
+  text-align: center;
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(80,250,123,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.hero h1 .accent { color: var(--green); }
+
+.hero .tagline {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  color: var(--fg-muted);
+  max-width: 540px;
+  margin: 0 auto 32px;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--green);
+  color: var(--bg);
+}
+
+.btn-primary:hover { box-shadow: 0 4px 20px rgba(80,250,123,0.3); }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+/* ── Terminal mockup ───────────────────────────────── */
+
+.terminal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.terminal-chrome {
+  background: #1e1f29;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot-close { background: #ff5f56; }
+.dot-min { background: #ffbd2e; }
+.dot-max { background: #27c93f; }
+
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 12px;
+  margin-right: 55px; /* balance the dots */
+}
+
+.terminal-body {
+  padding: 0;
+  position: relative;
+}
+
+/* ── Split pane ────────────────────────────────────── */
+
+.split {
+  display: flex;
+  min-height: 280px;
+}
+
+.pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pane-divider {
+  width: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.pane-winbar {
+  padding: 2px 12px;
+  font-size: 12px;
+  color: var(--fg);
+  background: var(--surface-light);
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pane-content {
+  flex: 1;
+  padding: 6px 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+}
+
+.pane-status {
+  padding: 2px 12px;
+  font-size: 12px;
+  background: var(--surface-light);
+  color: var(--fg-muted);
+  display: flex;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.terminal-cmdline {
+  padding: 2px 12px;
+  font-size: 12px;
+  min-height: 20px;
+  color: var(--fg-muted);
+}
+
+/* ── Source text highlighting ──────────────────────── */
+
+.hl-correct { color: var(--green); font-weight: 700; }
+.hl-wrong   { color: var(--red); background: var(--border); font-weight: 700; border-radius: 2px; }
+.hl-untyped { color: var(--fg-muted); }
+
+.hl-cursor {
+  background: var(--fg);
+  color: var(--surface);
+  font-weight: 700;
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+.typing-cursor {
+  display: inline-block;
+  width: 1px;
+  height: 1.1em;
+  background: var(--fg);
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: bar-blink 1s step-end infinite;
+}
+
+@keyframes bar-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+.tilde { color: var(--purple); opacity: 0.5; }
+
+/* ── Floating window ───────────────────────────────── */
+
+.float-container {
+  position: relative;
+}
+
+.float-bg {
+  padding: 6px 12px;
+  min-height: 280px;
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+  opacity: 0.3;
+}
+
+.float-win {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border: 1px solid var(--fg-muted);
+  border-radius: var(--radius-sm);
+  min-width: 280px;
+  max-width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.float-win-title {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.float-win-body {
+  padding: 12px 16px;
+  white-space: pre;
+}
+
+.float-win-body .selected {
+  background: var(--border);
+  display: block;
+  margin: 0 -16px;
+  padding: 1px 16px;
+}
+
+/* ── Sections ──────────────────────────────────────── */
+
+section {
+  padding: 80px 0;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.section-desc {
+  color: var(--fg-muted);
+  max-width: 560px;
+  margin-bottom: 48px;
+}
+
+/* ── Screenshots row ───────────────────────────────── */
+
+.screenshots {
+  padding: 40px 0 80px;
+}
+
+.screenshots .container > .section-label,
+.screenshots .container > .section-title,
+.screenshots .container > .section-desc {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.screenshot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.screenshot-grid .terminal { max-width: none; }
+
+.screenshot-caption {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+/* ── Features ──────────────────────────────────────── */
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.feature-card {
+  background: var(--bg-surface);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.feature-card:hover {
+  border-color: rgba(255,255,255,0.08);
+  transform: translateY(-2px);
+}
+
+.feature-accent {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  margin-bottom: 16px;
+}
+
+.feature-card h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  font-size: 0.88rem;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+
+/* ── Installation ──────────────────────────────────── */
+
+.install-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.install-block h3 {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--fg-muted);
+  margin-bottom: 10px;
+}
+
+.code-block {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-x: auto;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.code-block .kw { color: var(--pink); }
+.code-block .str { color: var(--yellow); }
+.code-block .fn { color: var(--green); }
+.code-block .num { color: var(--purple); }
+.code-block .cm { color: var(--fg-muted); }
+.code-block .op { color: var(--pink); }
+
+/* ── Commands ──────────────────────────────────────── */
+
+.cmd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.cmd-table th {
+  text-align: left;
+  padding: 12px 16px;
+  color: var(--fg-muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.cmd-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.cmd-table tr:last-child td { border-bottom: none; }
+
+.cmd-table code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: var(--surface);
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+/* ── Footer ────────────────────────────────────────── */
+
+footer {
+  padding: 40px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}
+
+footer a { color: var(--fg-muted); }
+footer a:hover { color: var(--fg); }
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+/* ── Scroll animation ──────────────────────────────── */
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Responsive ────────────────────────────────────── */
+
+@media (max-width: 820px) {
+  .screenshot-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .install-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero { padding: 56px 0 32px; }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  section { padding: 56px 0; }
+
+  .terminal { font-size: 11px; }
+
+  .split { min-height: 220px; }
+
+  .cmd-table { font-size: 0.82rem; }
+  .cmd-table th, .cmd-table td { padding: 10px 10px; }
+}
+
+@media (max-width: 480px) {
+  .terminal { font-size: 9.5px; }
+  .split { min-height: 180px; }
+  .float-win { min-width: 220px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Hero ──────────────────────────────────────── -->
+<header class="hero">
+  <div class="container">
+    <h1><span class="accent">gut-typist</span></h1>
+    <p class="tagline">Touch typing practice in Neovim, powered by Project Gutenberg</p>
+    <div class="hero-buttons">
+      <a href="https://github.com/5x5x5x5/gut-typist" class="btn btn-primary">View on GitHub</a>
+      <a href="#installation" class="btn btn-secondary">Install</a>
+    </div>
+
+    <!-- Main terminal: split-pane typing view -->
+    <div class="terminal fade-in">
+      <div class="terminal-chrome">
+        <div class="terminal-dots">
+          <span class="dot dot-close"></span>
+          <span class="dot dot-min"></span>
+          <span class="dot dot-max"></span>
+        </div>
+        <span class="terminal-title">nvim</span>
+      </div>
+      <div class="terminal-body">
+        <div class="split">
+          <!-- Source pane -->
+          <div class="pane">
+            <div class="pane-content"><span class="hl-correct">Pineapple rock, lemon platt,</span>
+<span class="hl-correct">butter scotch. A sug</span><span class="hl-wrong">a</span><span class="hl-correct">rsticky</span>
+<span class="hl-correct">girl shovelling scoopfuls of</span>
+<span class="hl-correct">crea</span><span class="hl-cursor">m</span><span class="hl-untyped">s for a christian brother.</span>
+<span class="hl-untyped">Some school treat. Bad for their</span>
+<span class="hl-untyped">tummies. Lozenge and comfit</span>
+<span class="hl-untyped">manufacturer to His Majesty the</span>
+<span class="hl-untyped">King. God. Save. Our. Sitting on</span>
+<span class="hl-untyped">his throne sucking red jujubes</span>
+<span class="hl-untyped">white.</span></div>
+            <div class="pane-status"><span>SOURCE</span><span>1,1</span></div>
+          </div>
+          <div class="pane-divider"></div>
+          <!-- Typing pane -->
+          <div class="pane">
+            <div class="pane-winbar">WPM: 67 | Accuracy: 94.3% | Progress: 2.1%</div>
+            <div class="pane-content">Pineapple rock, lemon platt,
+butter scotch. A sugersticky
+girl shovelling scoopfuls of
+crea<span class="typing-cursor"></span>
+<span class="tilde">~</span>
+<span class="tilde">~</span>
+<span class="tilde">~</span>
+<span class="tilde">~</span>
+<span class="tilde">~</span>
+<span class="tilde">~</span></div>
+            <div class="pane-status"><span>[Scratch]</span><span>4,5</span></div>
+          </div>
+        </div>
+        <div class="terminal-cmdline">-- INSERT --</div>
+      </div>
+    </div>
+
+  </div>
+</header>
+
+<!-- ─── Screenshots ───────────────────────────────── -->
+<section class="screenshots">
+  <div class="container">
+    <p class="section-label">See it in action</p>
+    <h2 class="section-title">Search, type, track</h2>
+    <p class="section-desc">Find any book on Project Gutenberg, practice typing with real-time feedback, and track your progress over time.</p>
+
+    <div class="screenshot-grid">
+
+      <!-- Search picker -->
+      <div class="fade-in">
+        <div class="terminal">
+          <div class="terminal-chrome">
+            <div class="terminal-dots">
+              <span class="dot dot-close"></span>
+              <span class="dot dot-min"></span>
+              <span class="dot dot-max"></span>
+            </div>
+            <span class="terminal-title">nvim</span>
+          </div>
+          <div class="terminal-body float-container">
+            <div class="float-bg">
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~</div>
+            <div class="float-win">
+              <div class="float-win-title">Search Results</div>
+              <div class="float-win-body">
+<span class="selected">1. [4300] Ulysses &mdash; Joyce, James</span>
+2. [4217] A Portrait of the Artist
+   as a Young Man &mdash; Joyce, James
+3. [2814] Dubliners &mdash; Joyce, James
+4. [4013] Ulysses S. Grant
+   &mdash; Woodward, William E.</div>
+            </div>
+            <div class="terminal-cmdline">:GutTypist search ulysses</div>
+          </div>
+        </div>
+        <p class="screenshot-caption">Search Project Gutenberg and pick a book from the floating picker</p>
+      </div>
+
+      <!-- Stats view -->
+      <div class="fade-in">
+        <div class="terminal">
+          <div class="terminal-chrome">
+            <div class="terminal-dots">
+              <span class="dot dot-close"></span>
+              <span class="dot dot-min"></span>
+              <span class="dot dot-max"></span>
+            </div>
+            <span class="terminal-title">nvim</span>
+          </div>
+          <div class="terminal-body float-container">
+            <div class="float-bg">
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~</div>
+            <div class="float-win">
+              <div class="float-win-title">Stats</div>
+              <div class="float-win-body">
+=== GutTypist Stats ===
+
+-- Current Session --
+  WPM:      67
+  Accuracy: 94.3%
+  Chars:    1847 typed, 1742 correct
+
+-- Lifetime --
+  Sessions:  23
+  Chars:     41209 typed, 38613 correct
+  Accuracy:  93.7%
+  Time:      312 minutes
+  Avg WPM:   62</div>
+            </div>
+            <div class="terminal-cmdline">:GutTypist stats</div>
+          </div>
+        </div>
+        <p class="screenshot-caption">Session and lifetime statistics in a floating window</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── Features ──────────────────────────────────── -->
+<section id="features">
+  <div class="container">
+    <p class="section-label">Features</p>
+    <h2 class="section-title">Everything you need to practice</h2>
+    <p class="section-desc">Built for Neovim users who want typing practice without leaving their editor.</p>
+
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-accent" style="background: var(--green);"></div>
+        <h3>Real-time feedback</h3>
+        <p>Every character you type is instantly highlighted green or red in the source pane. See exactly where you stand at a glance.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-accent" style="background: var(--purple);"></div>
+        <h3>WPM tracking</h3>
+        <p>A rolling words-per-minute counter in the winbar, along with accuracy percentage and progress through the book.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-accent" style="background: var(--cyan);"></div>
+        <h3>Session persistence</h3>
+        <p>Progress saves automatically. Close Neovim and come back later &mdash; <code>:GutTypist resume</code> picks up right where you left off.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-accent" style="background: var(--yellow);"></div>
+        <h3>Gutenberg library</h3>
+        <p>Search over 70,000 free books from Project Gutenberg. Practice with the prose that interests you.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-accent" style="background: var(--pink);"></div>
+        <h3>Zero dependencies</h3>
+        <p>Just Neovim 0.10+ and curl. No external plugins, no build steps, no runtime dependencies.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-accent" style="background: var(--orange);"></div>
+        <h3>Customizable</h3>
+        <p>Override highlight groups to match your colorscheme. Configure split ratio, wrap width, and WPM calculation window.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Installation ──────────────────────────────── -->
+<section id="installation">
+  <div class="container">
+    <p class="section-label">Get started</p>
+    <h2 class="section-title">Installation</h2>
+    <p class="section-desc">Add gut-typist to your Neovim config in seconds.</p>
+
+    <div class="install-grid">
+      <div class="install-block fade-in">
+        <h3>lazy.nvim</h3>
+        <div class="code-block"><span class="op">{</span>
+  <span class="str">"5x5x5x5/gut-typist"</span><span class="op">,</span>
+  <span class="fn">cmd</span> <span class="op">=</span> <span class="str">"GutTypist"</span><span class="op">,</span>
+  <span class="fn">opts</span> <span class="op">=</span> <span class="op">{},</span>
+<span class="op">}</span></div>
+      </div>
+      <div class="install-block fade-in">
+        <h3>Manual</h3>
+        <div class="code-block"><span class="cm">-- Clone the repo, then add to rtp:</span>
+<span class="kw">vim.opt</span><span class="op">.</span><span class="fn">rtp</span><span class="op">:</span><span class="fn">prepend</span><span class="op">(</span><span class="str">"~/gut-typist"</span><span class="op">)</span>
+<span class="kw">require</span><span class="op">(</span><span class="str">"gut-typist"</span><span class="op">).</span><span class="fn">setup</span><span class="op">({})</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Commands ──────────────────────────────────── -->
+<section id="commands">
+  <div class="container">
+    <p class="section-label">Reference</p>
+    <h2 class="section-title">Commands</h2>
+    <p class="section-desc">All commands are under the <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">:GutTypist</code> namespace.</p>
+
+    <div class="fade-in" style="overflow-x:auto;">
+      <table class="cmd-table">
+        <thead>
+          <tr><th>Command</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>:GutTypist search &lt;query&gt;</code></td>
+            <td>Search Project Gutenberg and pick a book from the results</td>
+          </tr>
+          <tr>
+            <td><code>:GutTypist start &lt;id&gt;</code></td>
+            <td>Start typing a book by its Gutenberg ID</td>
+          </tr>
+          <tr>
+            <td><code>:GutTypist resume</code></td>
+            <td>Resume the most recent session</td>
+          </tr>
+          <tr>
+            <td><code>:GutTypist stop</code></td>
+            <td>Save progress and close the typing view</td>
+          </tr>
+          <tr>
+            <td><code>:GutTypist stats</code></td>
+            <td>Show session and lifetime statistics</td>
+          </tr>
+          <tr>
+            <td><code>:GutTypist library</code></td>
+            <td>Browse previously downloaded books</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Footer ────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="https://github.com/5x5x5x5/gut-typist">GitHub</a>
+      <a href="https://github.com/5x5x5x5/gut-typist/issues">Issues</a>
+      <a href="https://www.gutenberg.org/">Project Gutenberg</a>
+    </div>
+    <p>MIT License</p>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.fade-in').forEach(function (el) {
+    observer.observe(el);
+  });
+});
+</script>
+
+</body>
+</html>
