@@ -1,33 +1,29 @@
 # gut-typist
 
-A Neovim plugin for touch typing practice using books from [Project Gutenberg](https://www.gutenberg.org/).
+A Vim plugin for touch typing practice using books from [Project Gutenberg](https://www.gutenberg.org/).
 
-Search for any book, and gut-typist opens a split-pane view: the source text on the left with per-character color feedback, and a typing buffer on the right. Real-time WPM, accuracy, and progress are displayed in the winbar. Sessions are saved automatically so you can pick up where you left off.
+Search for any book, and gut-typist opens a split-pane view: the source text on the left with per-character color feedback, and a typing buffer on the right. Real-time WPM, accuracy, and progress are displayed in the statusline. Sessions are saved automatically so you can pick up where you left off.
 
 ## Requirements
 
-- Neovim 0.10+
+- Vim 8.2+
 - `curl` on PATH
 
 ## Installation
 
-### lazy.nvim
+### vim-plug
 
-```lua
-{
-  "5x5x5x5/gut-typist",
-  cmd = "GutTypist",
-  opts = {},
-}
+```vim
+Plug '5x5x5x5/gut-typist'
 ```
 
 ### Manual
 
 Clone the repo and add it to your runtime path:
 
-```lua
-vim.opt.rtp:prepend("~/gut-typist")
-require("gut-typist").setup({})
+```vim
+set rtp+=~/gut-typist
+call gut_typist#Setup({})
 ```
 
 ## Usage
@@ -51,7 +47,7 @@ Select a book from the picker, and start typing. Characters in the source pane t
 
 ## Highlights
 
-These highlight groups are defined with `default = true` so you can override them in your colorscheme:
+These highlight groups are defined with `highlight default` so you can override them in your colorscheme:
 
 | Group | Default | Purpose |
 |---|---|---|
@@ -64,18 +60,18 @@ These highlight groups are defined with `default = true` so you can override the
 
 All options are optional. Defaults shown below:
 
-```lua
-require("gut-typist").setup({
-  split_ratio = 0.5,           -- width ratio of source pane
-  wrap_width = 80,             -- text wrapping width
-  save_interval_ms = 5000,     -- auto-save debounce interval
-  wpm_window_seconds = 10,     -- rolling WPM calculation window
-})
+```vim
+call gut_typist#Setup({
+      \ 'split_ratio': 0.5,
+      \ 'wrap_width': 80,
+      \ 'save_interval_ms': 5000,
+      \ 'wpm_window_seconds': 10,
+      \})
 ```
 
 ## Data storage
 
-Books and session data are stored under `~/.local/share/nvim/gut-typist/`:
+Books and session data are stored under `~/.vim/gut-typist/`:
 
 ```
 books/{id}/text.txt        -- cleaned book text

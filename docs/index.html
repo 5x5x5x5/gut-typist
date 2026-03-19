@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>gut-typist — Touch typing practice in Neovim</title>
-<meta name="description" content="A Neovim plugin for touch typing practice using books from Project Gutenberg. Real-time feedback, WPM tracking, and session persistence.">
+<title>gut-typist — Touch typing practice in Vim</title>
+<meta name="description" content="A Vim plugin for touch typing practice using books from Project Gutenberg. Real-time feedback, WPM tracking, and session persistence.">
 <meta property="og:title" content="gut-typist">
-<meta property="og:description" content="Touch typing practice in Neovim, powered by Project Gutenberg.">
+<meta property="og:description" content="Touch typing practice in Vim, powered by Project Gutenberg.">
 <meta property="og:type" content="website">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -572,7 +572,7 @@ footer a:hover { color: var(--fg); }
 <header class="hero">
   <div class="container">
     <h1><span class="accent">gut-typist</span></h1>
-    <p class="tagline">Touch typing practice in Neovim, powered by Project Gutenberg</p>
+    <p class="tagline">Touch typing practice in Vim, powered by Project Gutenberg</p>
     <div class="hero-buttons">
       <a href="https://github.com/5x5x5x5/gut-typist" class="btn btn-primary">View on GitHub</a>
       <a href="#installation" class="btn btn-secondary">Install</a>
@@ -586,7 +586,7 @@ footer a:hover { color: var(--fg); }
           <span class="dot dot-min"></span>
           <span class="dot dot-max"></span>
         </div>
-        <span class="terminal-title">nvim</span>
+        <span class="terminal-title">vim</span>
       </div>
       <div class="terminal-body">
         <div class="split">
@@ -646,7 +646,7 @@ crea<span class="typing-cursor"></span>
               <span class="dot dot-min"></span>
               <span class="dot dot-max"></span>
             </div>
-            <span class="terminal-title">nvim</span>
+            <span class="terminal-title">vim</span>
           </div>
           <div class="terminal-body float-container">
             <div class="float-bg">
@@ -674,7 +674,7 @@ crea<span class="typing-cursor"></span>
             <div class="terminal-cmdline">:GutTypist search ulysses</div>
           </div>
         </div>
-        <p class="screenshot-caption">Search Project Gutenberg and pick a book from the floating picker</p>
+        <p class="screenshot-caption">Search Project Gutenberg and pick a book from the popup picker</p>
       </div>
 
       <!-- Stats view -->
@@ -686,7 +686,7 @@ crea<span class="typing-cursor"></span>
               <span class="dot dot-min"></span>
               <span class="dot dot-max"></span>
             </div>
-            <span class="terminal-title">nvim</span>
+            <span class="terminal-title">vim</span>
           </div>
           <div class="terminal-body float-container">
             <div class="float-bg">
@@ -721,7 +721,7 @@ crea<span class="typing-cursor"></span>
             <div class="terminal-cmdline">:GutTypist stats</div>
           </div>
         </div>
-        <p class="screenshot-caption">Session and lifetime statistics in a floating window</p>
+        <p class="screenshot-caption">Session and lifetime statistics in a popup window</p>
       </div>
 
     </div>
@@ -733,7 +733,7 @@ crea<span class="typing-cursor"></span>
   <div class="container">
     <p class="section-label">Features</p>
     <h2 class="section-title">Everything you need to practice</h2>
-    <p class="section-desc">Built for Neovim users who want typing practice without leaving their editor.</p>
+    <p class="section-desc">Built for Vim users who want typing practice without leaving their editor.</p>
 
     <div class="features-grid">
       <div class="feature-card fade-in">
@@ -744,12 +744,12 @@ crea<span class="typing-cursor"></span>
       <div class="feature-card fade-in">
         <div class="feature-accent" style="background: var(--purple);"></div>
         <h3>WPM tracking</h3>
-        <p>A rolling words-per-minute counter in the winbar, along with accuracy percentage and progress through the book.</p>
+        <p>A rolling words-per-minute counter in the statusline, along with accuracy percentage and progress through the book.</p>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-accent" style="background: var(--cyan);"></div>
         <h3>Session persistence</h3>
-        <p>Progress saves automatically. Close Neovim and come back later &mdash; <code>:GutTypist resume</code> picks up right where you left off.</p>
+        <p>Progress saves automatically. Close Vim and come back later &mdash; <code>:GutTypist resume</code> picks up right where you left off.</p>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-accent" style="background: var(--yellow);"></div>
@@ -759,7 +759,7 @@ crea<span class="typing-cursor"></span>
       <div class="feature-card fade-in">
         <div class="feature-accent" style="background: var(--pink);"></div>
         <h3>Zero dependencies</h3>
-        <p>Just Neovim 0.10+ and curl. No external plugins, no build steps, no runtime dependencies.</p>
+        <p>Just Vim 8.2+ and curl. No external plugins, no build steps, no runtime dependencies.</p>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-accent" style="background: var(--orange);"></div>
@@ -775,22 +775,18 @@ crea<span class="typing-cursor"></span>
   <div class="container">
     <p class="section-label">Get started</p>
     <h2 class="section-title">Installation</h2>
-    <p class="section-desc">Add gut-typist to your Neovim config in seconds.</p>
+    <p class="section-desc">Add gut-typist to your Vim config in seconds.</p>
 
     <div class="install-grid">
       <div class="install-block fade-in">
-        <h3>lazy.nvim</h3>
-        <div class="code-block"><span class="op">{</span>
-  <span class="str">"5x5x5x5/gut-typist"</span><span class="op">,</span>
-  <span class="fn">cmd</span> <span class="op">=</span> <span class="str">"GutTypist"</span><span class="op">,</span>
-  <span class="fn">opts</span> <span class="op">=</span> <span class="op">{},</span>
-<span class="op">}</span></div>
+        <h3>vim-plug</h3>
+        <div class="code-block"><span class="fn">Plug</span> <span class="str">'5x5x5x5/gut-typist'</span></div>
       </div>
       <div class="install-block fade-in">
         <h3>Manual</h3>
-        <div class="code-block"><span class="cm">-- Clone the repo, then add to rtp:</span>
-<span class="kw">vim.opt</span><span class="op">.</span><span class="fn">rtp</span><span class="op">:</span><span class="fn">prepend</span><span class="op">(</span><span class="str">"~/gut-typist"</span><span class="op">)</span>
-<span class="kw">require</span><span class="op">(</span><span class="str">"gut-typist"</span><span class="op">).</span><span class="fn">setup</span><span class="op">({})</span></div>
+        <div class="code-block"><span class="cm">" Clone the repo, then add to rtp:</span>
+<span class="kw">set</span> <span class="fn">rtp</span><span class="op">+=</span><span class="str">~/gut-typist</span>
+<span class="kw">call</span> <span class="fn">gut_typist#Setup</span><span class="op">({})</span></div>
       </div>
     </div>
   </div>
