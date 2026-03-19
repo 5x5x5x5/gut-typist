@@ -1,8 +1,8 @@
-# gut-typist
+# gutenberg-typist
 
 A Vim plugin for touch typing practice using books from [Project Gutenberg](https://www.gutenberg.org/).
 
-Search for any book, and gut-typist opens a split-pane view: the source text on the left with per-character color feedback, and a typing buffer on the right. Real-time WPM, accuracy, and progress are displayed in the statusline. Sessions are saved automatically so you can pick up where you left off.
+Search for any book, and gutenberg-typist opens a split-pane view: the source text on the left with per-character color feedback, and a typing buffer on the right. Real-time WPM, accuracy, and progress are displayed in the statusline. Sessions are saved automatically so you can pick up where you left off.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ Search for any book, and gut-typist opens a split-pane view: the source text on 
 ### vim-plug
 
 ```vim
-Plug '5x5x5x5/gut-typist'
+Plug '5x5x5x5/gutenberg-typist'
 ```
 
 ### Manual
@@ -22,7 +22,7 @@ Plug '5x5x5x5/gut-typist'
 Clone the repo and add it to your runtime path:
 
 ```vim
-set rtp+=~/gut-typist
+set rtp+=~/gutenberg-typist
 call gut_typist#Setup({})
 ```
 
@@ -71,7 +71,7 @@ call gut_typist#Setup({
 
 ## Data storage
 
-Books and session data are stored under `~/.vim/gut-typist/`:
+Books and session data are stored under `~/.vim/gutenberg-typist/`:
 
 ```
 books/{id}/text.txt        -- cleaned book text
