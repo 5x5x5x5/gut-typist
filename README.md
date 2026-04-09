@@ -11,20 +11,40 @@ Search for any book, and gutenberg-typist opens a split-pane view: the source te
 
 ## Installation
 
+### Native Vim 8 packages (no plugin manager)
+
+Works on a fresh Vim install — no extra tools required. Run from any directory:
+
+```sh
+mkdir -p ~/.vim/pack/plugins/start
+git clone https://github.com/5x5x5x5/gutenberg-typist \
+  ~/.vim/pack/plugins/start/gutenberg-typist
+```
+
+Restart Vim, then try it:
+
+```vim
+:GutTypist search pride prejudice
+```
+
 ### vim-plug
 
 ```vim
 Plug '5x5x5x5/gutenberg-typist'
 ```
 
-### Manual
+Then run `:PlugInstall`.
 
-Clone the repo and add it to your runtime path:
+### Manual (custom location)
+
+Clone the repo anywhere and add it to your runtime path in `~/.vimrc`:
 
 ```vim
-set rtp+=~/gutenberg-typist
-call gut_typist#Setup({})
+set rtp+=~/code/gutenberg-typist
 ```
+
+No `Setup()` call is needed — the plugin loads itself. Only call
+`gut_typist#Setup({...})` if you want to override defaults (see Configuration).
 
 ## Usage
 

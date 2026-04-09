@@ -779,14 +779,28 @@ crea<span class="typing-cursor"></span>
 
     <div class="install-grid">
       <div class="install-block fade-in">
-        <h3>vim-plug</h3>
-        <div class="code-block"><span class="fn">Plug</span> <span class="str">'5x5x5x5/gutenberg-typist'</span></div>
+        <h3>Native Vim 8 packages</h3>
+        <div class="code-block"><span class="cm"># Works on a fresh Vim — run from anywhere:</span>
+<span class="fn">mkdir</span> -p ~/.vim/pack/plugins/start
+<span class="fn">git</span> clone https://github.com/5x5x5x5/gutenberg-typist <span class="op">\</span>
+  ~/.vim/pack/plugins/start/gutenberg-typist
+
+<span class="cm"># Then in Vim:</span>
+<span class="op">:</span><span class="fn">GutTypist</span> search pride prejudice</div>
       </div>
       <div class="install-block fade-in">
-        <h3>Manual</h3>
-        <div class="code-block"><span class="cm">" Clone the repo, then add to rtp:</span>
-<span class="kw">set</span> <span class="fn">rtp</span><span class="op">+=</span><span class="str">~/gutenberg-typist</span>
-<span class="kw">call</span> <span class="fn">gut_typist#Setup</span><span class="op">({})</span></div>
+        <h3>vim-plug</h3>
+        <div class="code-block"><span class="cm">" In your vimrc:</span>
+<span class="fn">Plug</span> <span class="str">'5x5x5x5/gutenberg-typist'</span>
+
+<span class="cm">" Then run :PlugInstall</span></div>
+      </div>
+      <div class="install-block fade-in">
+        <h3>Manual (custom location)</h3>
+        <div class="code-block"><span class="cm">" Clone anywhere, then in your vimrc:</span>
+<span class="kw">set</span> <span class="fn">rtp</span><span class="op">+=</span><span class="str">~/code/gutenberg-typist</span>
+
+<span class="cm">" Setup() is optional — only for overrides</span></div>
       </div>
     </div>
   </div>
